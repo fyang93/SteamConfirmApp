@@ -1,5 +1,6 @@
 ﻿@using System.ComponentModel
 
+@inject ILogger<NavBar> Logger
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject Services.SteamGuardTimerService GuardTimer
 
@@ -32,11 +33,19 @@
     #region 加载、重置、实时保存用户设置
     protected override async Task OnInitializedAsync()
     {
-        var result = await ProtectedLocalStore.GetAsync<Settings>("settings");
-        if (result.Success && result.Value != null) 
+        try
         {
-            Settings.UpdateFrom(result.Value);
+            var result = await ProtectedLocalStore.GetAsync<Settings>("settings");
+            if (result.Success && result.Value != null)
+            {
+                Settings.UpdateFrom(result.Value);
+            }
         }
+        catch
+        {
+            Logger.LogWarning("Failed to get settings from local store.");
+        }
+
     }
 
     private void ResetSettings()

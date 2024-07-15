@@ -2,7 +2,7 @@
 
 namespace SteamConfirmApp.Services
 {
-    public class SteamGuardTimerService
+    public class SteamGuardTimerService : IDisposable
     {
         private PeriodicTimer _timer;
         private CancellationTokenSource _cancellationTokenSource;
@@ -20,6 +20,11 @@ namespace SteamConfirmApp.Services
             _timer = new(interval);
             _cancellationTokenSource = new();
             StartTimer();
+        }
+
+        public void Dispose()
+        {
+            this.StopTimer();
         }
 
         private async Task RunPeriodicTaskAsync()

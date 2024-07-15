@@ -353,4 +353,4 @@ MigrationBackup/
 .ionide/
 
 
-./SteamConfirmApp/uploads/*
+SteamConfirmApp/uploads/**
