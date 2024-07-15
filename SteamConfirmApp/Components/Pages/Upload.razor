@@ -1,0 +1,91 @@
+﻿@inject ILogger<Upload> Logger
+@inject IWebHostEnvironment Environment
+@inject ProtectedLocalStorage ProtectedLocalStore
+
+<div class="input-group mb-1 mt-1">
+    <InputFile OnChange="HandleFileSelected" class="form-control" multiple accept="@AccpetFileExtension" />
+    <button class="btn btn-outline-primary" @onclick="LoadFiles">上传</button>
+</div>
+
+@if (loadedFiles.Any())
+{
+    <ol class="list-group list-group-numbered mt-3">
+        @foreach (var file in loadedFiles)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div class="ms-2 me-auto">
+                    <div class="fw-bold">@file.Name</div>
+                </div>
+                <span class="badge bg-primary rounded-pill">@($"{file.Size}B")</span>
+            </li>
+        }
+    </ol>
+}
+
+@code {
+    [Parameter]
+    public string AccpetFileExtension { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnUploadComplete { get; set; }
+
+    [CascadingParameter]
+    public Settings Settings { get; set; }
+
+    public static readonly string UploadFolder = "uploads";
+
+    private List<IBrowserFile> loadedFiles = new();
+    private long maxFileSize = 1024 * 15;
+    private int maxAllowedFiles = 10;
+
+    InputFileChangeEventArgs? fileChangeEventArgs = null;
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        fileChangeEventArgs = e;
+    }
+
+    private async Task LoadFiles()
+    {
+        // If there's no upload dir, create it
+        var uploadDirectory = Path.Combine(Environment.ContentRootPath, UploadFolder, Settings.Username);
+        if (!Directory.Exists(uploadDirectory))
+        {
+            Directory.CreateDirectory(uploadDirectory);
+        }
+
+        loadedFiles.Clear();
+
+        if (fileChangeEventArgs == null) return;
+
+        foreach (var file in fileChangeEventArgs.GetMultipleFiles(maxAllowedFiles))
+        {
+            try
+            {
+                var path = Path.Combine(uploadDirectory, file.Name);
+
+                await using FileStream writeStream = new(path, FileMode.Create);
+                using var readStream = file.OpenReadStream(maxFileSize);
+                var bytesRead = 0;
+                var buffer = new byte[1024 * 10];
+
+                while ((bytesRead = await readStream.ReadAsync(buffer)) != 0)
+                {
+                    await writeStream.WriteAsync(buffer, 0, bytesRead);
+                    StateHasChanged();
+                }
+
+                loadedFiles.Add(file);
+
+                Logger.LogInformation("File saved: {Filename}", file.Name);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("File: {FileName} Error: {Error}",
+                    file.Name, ex.Message);
+            }
+        }
+
+        await OnUploadComplete.InvokeAsync();
+    }
+}

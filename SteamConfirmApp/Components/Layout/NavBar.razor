@@ -1,0 +1,72 @@
+﻿@using System.ComponentModel
+
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject Services.SteamGuardTimerService GuardTimer
+
+<nav class="navbar navbar-light bg-light p-2 px-3 px-sm-4 px-md-4">
+    <div class="container-fluid">
+        <!-- Hidden on small screens -->
+        <a class="navbar-brand d-none d-md-block">@currentTime</a>
+
+        <!-- Centered on small screens -->
+        @* <a class="navbar-brand d-sm-none mx-auto text-center">@currentTime</a> *@
+
+        <div class="d-flex">
+            <div class="input-group">
+                <span class="input-group-text" id="username-desc">@@</span>
+                <input type="text" class="form-control" placeholder="用户名" aria-describedby="username-desc" @bind="Settings.Username">
+
+                <span class="input-group-text" id="passkey-desc">密钥</span>
+                <input type="password" class="form-control" id="basic-url" aria-describedby="passkey-desc" @bind="Settings.Passkey">
+
+                <button class="btn btn-outline-primary" @onclick="ResetSettings">重置</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+@code {
+    [CascadingParameter]
+    public Settings Settings { get; set; }
+
+    #region 加载、重置、实时保存用户设置
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ProtectedLocalStore.GetAsync<Settings>("settings");
+        if (result.Success && result.Value != null) 
+        {
+            Settings.UpdateFrom(result.Value);
+        }
+    }
+
+    private void ResetSettings()
+    {
+        Settings.UpdateFrom(new());
+    }
+
+    private void OnSettingsChanged(object sender, PropertyChangedEventArgs e)
+    {
+        ProtectedLocalStore.SetAsync("settings", Settings);
+    }
+    #endregion
+
+    #region 显示当前时间相关
+    private string currentTime = DateTime.Now.ToString("HH:mm:ss");
+
+    protected override void OnInitialized()
+    {
+        GuardTimer.OnTickAsync += UpdateTimeAsync;
+    }
+
+    private async Task UpdateTimeAsync()
+    {
+        currentTime = DateTime.Now.ToString("HH:mm:ss");
+        await InvokeAsync(StateHasChanged);
+    }
+    #endregion
+
+    public void Dispose()
+    {
+        GuardTimer.OnTickAsync -= UpdateTimeAsync;
+    }
+}
