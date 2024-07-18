@@ -5,6 +5,7 @@
 
 @inject ILogger<Home> Logger
 @inject IWebHostEnvironment Environment
+@inject ProtectedLocalStorage ProtectedLocalStore
 @inject Services.SteamTradesTimerService TradesTimer
 
 <PageTitle>Steam确认工具</PageTitle>
@@ -153,6 +154,8 @@
                 break;
         }
         InvokeAsync(StateHasChanged);
+
+        ProtectedLocalStore.SetAsync("settings", Settings);
     }
 
     private async Task AcceptConfirmationAsync(SteamGuardAccount account, Confirmation confirm)

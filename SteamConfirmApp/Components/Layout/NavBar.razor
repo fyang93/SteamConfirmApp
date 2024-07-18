@@ -45,17 +45,11 @@
         {
             Logger.LogWarning("Failed to get settings from local store.");
         }
-
     }
 
     private void ResetSettings()
     {
         Settings.UpdateFrom(new());
-    }
-
-    private void OnSettingsChanged(object sender, PropertyChangedEventArgs e)
-    {
-        ProtectedLocalStore.SetAsync("settings", Settings);
     }
     #endregion
 
