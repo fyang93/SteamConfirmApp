@@ -1,4 +1,7 @@
-﻿<div class="pe-sm-1 pe-md-2 mb-3">
+﻿@using System.ComponentModel
+@inject ProtectedLocalStorage ProtectedLocalStore
+
+<div class="pe-sm-1 pe-md-2 mb-3">
     <ul class="list-group list-group-horizontal-md">
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <div class="form-check form-switch">
@@ -30,4 +33,19 @@
 @code {
     [CascadingParameter]
     protected Settings Settings { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Settings.PropertyChanged += OnSettingsChanged;
+    }
+
+    public void Dispose()
+    {
+        Settings.PropertyChanged -= OnSettingsChanged;
+    }
+
+    private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
 }
